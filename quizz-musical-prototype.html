@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blind Test — Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1b1b2f;
+    --card: #262640;
+    --card-edge: #33335a;
+    --amber: #f2a65a;
+    --teal: #4ecdc4;
+    --coral: #e4572e;
+    --cream: #f5f0e6;
+    --cream-dim: #b8b3c9;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(circle at 50% -10%, #2a2a4a 0%, var(--bg) 55%);
+    color: var(--cream);
+    font-family: 'Inter', sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 24px 16px;
+  }
+  .stage{
+    width:100%;
+    max-width: 420px;
+  }
+  h1, .score-num{
+    font-family:'Space Grotesk', sans-serif;
+  }
+  /* ---- Écran d'accueil ---- */
+  .home{
+    text-align:center;
+  }
+  .home h1{
+    font-size: 2rem;
+    line-height:1.15;
+    margin: 0 0 10px;
+    letter-spacing:-0.01em;
+  }
+  .home p{
+    color: var(--cream-dim);
+    font-size: 0.95rem;
+    margin: 0 0 32px;
+    line-height:1.5;
+  }
+  .vinyl{
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 32px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, var(--amber) 0 8%, #14141f 9% 11%, #14141f 12% 100%),
+      repeating-radial-gradient(circle at center, #1c1c2c 0 3px, #14141f 3px 6px);
+    box-shadow: 0 20px 40px -12px rgba(0,0,0,0.6);
+    animation: spin 6s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  button{
+    font-family:'Inter', sans-serif;
+    cursor:pointer;
+    border:none;
+  }
+  .btn-primary{
+    background: var(--amber);
+    color: #1b1b2f;
+    font-weight:600;
+    font-size: 1rem;
+    padding: 14px 36px;
+    border-radius: 999px;
+    transition: transform 0.15s ease;
+  }
+  .btn-primary:active{ transform: scale(0.96); }
+
+  /* ---- Écran de jeu ---- */
+  .game{ display:none; }
+  .top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom: 22px;
+    font-size: 0.85rem;
+    color: var(--cream-dim);
+  }
+  .score-num{
+    color: var(--cream);
+    font-size:1.1rem;
+    font-weight:700;
+  }
+  .timer-ring{
+    position:relative;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 20px;
+  }
+  .timer-ring svg{ transform: rotate(-90deg); width:100%; height:100%; }
+  .timer-ring circle{
+    fill:none;
+    stroke-width: 6;
+  }
+  .ring-track{ stroke: var(--card-edge); }
+  .ring-progress{
+    stroke: var(--teal);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+  }
+  .play-btn{
+    position:absolute;
+    inset:0;
+    margin:auto;
+    width: 60px;
+    height: 60px;
+    border-radius:50%;
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--amber);
+    font-size: 1.3rem;
+  }
+  .prompt{
+    text-align:center;
+    color: var(--cream-dim);
+    font-size: 0.9rem;
+    margin-bottom: 26px;
+  }
+  .choices{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .choice{
+    background: var(--card);
+    border: 1px solid var(--card-edge);
+    color: var(--cream);
+    border-radius: 14px;
+    padding: 16px 12px;
+    font-size: 0.92rem;
+    font-weight:500;
+    text-align:left;
+    line-height:1.3;
+    transition: transform 0.1s ease, border-color 0.2s ease;
+  }
+  .choice:active{ transform: scale(0.97); }
+  .choice.correct{ border-color: var(--teal); background: rgba(78,205,196,0.14); }
+  .choice.wrong{ border-color: var(--coral); background: rgba(228,87,46,0.14); }
+  .choice[disabled]{ pointer-events:none; }
+
+  /* ---- Écran de fin ---- */
+  .end{ display:none; text-align:center; }
+  .end .big-score{
+    font-size: 3.4rem;
+    font-weight:700;
+    margin: 10px 0 4px;
+  }
+  .end .out-of{
+    color: var(--cream-dim);
+    margin-bottom: 30px;
+    font-size:0.95rem;
+  }
+  .hint{
+    margin-top: 26px;
+    font-size: 0.78rem;
+    color: var(--cream-dim);
+    line-height:1.5;
+    border-top: 1px solid var(--card-edge);
+    padding-top:16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- Accueil -->
+  <div class="home" id="home">
+    <div class="vinyl"></div>
+    <h1>Blind Test entre nous</h1>
+    <p>Écoute l'extrait, retrouve le titre avant la fin du chrono. 8 morceaux, à toi de jouer.</p>
+    <button class="btn-primary" onclick="startGame()">Lancer la partie</button>
+  </div>
+
+  <!-- Jeu -->
+  <div class="game" id="game">
+    <div class="top-row">
+      <span>Morceau <span id="qIndex">1</span>/8</span>
+      <span class="score-num" id="scoreLive">0 pt</span>
+    </div>
+
+    <div class="timer-ring">
+      <svg viewBox="0 0 100 100">
+        <circle class="ring-track" cx="50" cy="50" r="42"></circle>
+        <circle class="ring-progress" id="ringProgress" cx="50" cy="50" r="42" stroke-dasharray="264" stroke-dashoffset="0"></circle>
+      </svg>
+      <button class="play-btn" id="playBtn" onclick="playMelody()">▶</button>
+    </div>
+
+    <p class="prompt" id="prompt">Appuie sur play pour écouter l'extrait</p>
+
+    <div class="choices" id="choices"></div>
+  </div>
+
+  <!-- Fin -->
+  <div class="end" id="end">
+    <h1>Partie terminée</h1>
+    <div class="big-score" id="finalScore">0</div>
+    <div class="out-of">points sur 8 morceaux</div>
+    <button class="btn-primary" onclick="startGame()">Rejouer</button>
+    <p class="hint">Prototype : les mélodies sont générées pour la démo (pas de vrais extraits). La version finale piocherait dans un catalogue via l'API Deezer et se jouerait en appli mobile.</p>
+  </div>
+
+</div>
+
+<script>
+// --- Banque de "morceaux" avec mélodie procédurale distincte pour chacun ---
+const songs = [
+  { title: "Nuit Électrique", artist: "Vélocité", melody: [523,659,784,659,880] },
+  { title: "Rue des Songes", artist: "Marée Basse", melody: [392,440,494,440,392,330] },
+  { title: "Chaleur Bleue", artist: "Kilo Sud", melody: [349,415,349,466,392] },
+  { title: "Horizon Vide", artist: "Anouk Ferry", melody: [587,523,587,698,659] },
+  { title: "Sables Mouvants", artist: "Le Comité", melody: [440,523,440,349,392] },
+  { title: "Deuxième Souffle", artist: "Odalie", melody: [659,587,523,587,494] },
+  { title: "Ciel de Traîne", artist: "Novembre", melody: [330,392,440,392,330,294] },
+  { title: "Petit Matin", artist: "Yona Reeve", melody: [494,440,392,440,523] }
+];
+
+let order = [], current = 0, score = 0, timerInterval, timeLeft, answered = false;
+const RING_LEN = 264;
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function startGame(){
+  order = shuffle(songs);
+  current = 0;
+  score = 0;
+  document.getElementById('home').style.display = 'none';
+  document.getElementById('end').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+  loadQuestion();
+}
+
+function loadQuestion(){
+  answered = false;
+  clearInterval(timerInterval);
+  document.getElementById('qIndex').textContent = current + 1;
+  document.getElementById('scoreLive').textContent = score + ' pt';
+  document.getElementById('prompt').textContent = "Appuie sur play pour écouter l'extrait";
+  document.getElementById('playBtn').textContent = '▶';
+  document.getElementById('playBtn').disabled = false;
+
+  const ring = document.getElementById('ringProgress');
+  ring.style.stroke = 'var(--teal)';
+  ring.style.strokeDashoffset = 0;
+
+  const correctSong = order[current];
+  const decoys = shuffle(songs.filter(s => s !== correctSong)).slice(0,3);
+  const options = shuffle([correctSong, ...decoys]);
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.innerHTML = `<strong>${opt.title}</strong><br>${opt.artist}`;
+    btn.onclick = () => selectAnswer(btn, opt === correctSong);
+    choicesEl.appendChild(btn);
+  });
+}
+
+function playMelody(){
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  const melody = order[current].melody;
+  let t = ctx.currentTime;
+  melody.forEach(freq => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.15, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.35);
+    t += 0.32;
+  });
+
+  document.getElementById('prompt').textContent = 'Trouve le bon titre avant la fin du chrono';
+  startTimer();
+}
+
+function startTimer(){
+  timeLeft = 10;
+  const ring = document.getElementById('ringProgress');
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft -= 1;
+    const ratio = timeLeft / 10;
+    ring.style.strokeDashoffset = RING_LEN * (1 - ratio);
+    if(ratio < 0.3){ ring.style.stroke = 'var(--coral)'; }
+    if(timeLeft <= 0){
+      clearInterval(timerInterval);
+      if(!answered) revealAnswer(null);
+    }
+  }, 1000);
+}
+
+function selectAnswer(btn, isCorrect){
+  if(answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+  if(isCorrect){
+    score += Math.max(10, timeLeft * 10);
+  }
+  revealAnswer(btn, isCorrect);
+}
+
+function revealAnswer(clickedBtn, wasCorrect){
+  answered = true;
+  document.getElementById('playBtn').disabled = true;
+  const buttons = document.querySelectorAll('.choice');
+  const correctTitle = order[current].title;
+  buttons.forEach(b => {
+    b.disabled = true;
+    if(b.textContent.includes(correctTitle)){
+      b.classList.add('correct');
+    } else if(b === clickedBtn){
+      b.classList.add('wrong');
+    }
+  });
+  document.getElementById('scoreLive').textContent = score + ' pt';
+  document.getElementById('prompt').textContent = wasCorrect ? 'Bien joué !' : "C'était : " + correctTitle;
+
+  setTimeout(() => {
+    current += 1;
+    if(current < order.length){
+      loadQuestion();
+    } else {
+      showEnd();
+    }
+  }, 1600);
+}
+
+function showEnd(){
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('end').style.display = 'block';
+  document.getElementById('finalScore').textContent = score;
+}
+</script>
+
+</body>
+</html>
